@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="../static/style.css" />
+    <title>Hotel review classification</title>
+  </head>
+  <body>
+    <div class="container">
+      <img src="../static/hotel.png" alt="Lexus" class="logo" />
+      <form action="/submit" method="POST">
+        <div class="form-group">
+          <h3>Write a hotel review</h3>
+          <textarea
+            name="review"
+            id=""
+            cols="30"
+            rows="10"
+            placeholder="Please use Italian language and max 200 words"
+          ></textarea>
+        </div>
+        <input type="submit" value="Submit" class="btn" />
+      </form>
+      {% if message %}
+      <p class="message">{{ message | safe }}</p>
+      {% endif %}
+    </div>
+  </body>
+</html>
