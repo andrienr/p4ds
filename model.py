@@ -33,7 +33,7 @@ class Model():
         self.df_multiclass_labels = self.data.df_multiclass_labels
 
         if ui_model:
-            # if a compiled model does not exist create a new one
+            # if a compiled model does not exist create a new one and train for just few epochs
             if not os.path.exists(model_path):
 
                 start = time.time()
@@ -49,7 +49,7 @@ class Model():
                 print("Training elapsed time: ", end - start, " seconds")
 
             else:
-                # Load a already trained and compiled model from model_path directory
+                # load a already trained and compiled model from model_path directory
                 self.multilabel_model = tf.keras.models.load_model(
                     os.path.join(model_path, 'multilabel_model'))
                 self.multiclass_model = {}
@@ -100,7 +100,7 @@ class Model():
 
         # first predict the category
         multilabel_prediction = self.multilabel_model(np.asarray([self.tokenizer(text)]))
-        threshold = 0.1
+        threshold = 0.3
         relevant_categories = np.where(multilabel_prediction[0] > threshold)
 
         # predict the sentiment for the relevant categories
@@ -120,8 +120,8 @@ class Model():
         n_inputs = features.shape[1]
         results = list()
         # define evaluation procedure
-        cv = RepeatedKFold(n_splits=10, n_repeats=1, random_state=4523)
-        l_test, pred = np.array([]), np.array([])
+        cv = RepeatedKFold(n_splits=10, n_repeats=1, random_state=452326)
+        pred, l_test = np.array([]), np.array([])
         for train_ids, test_ids in cv.split(features):
             # prepare data
             # define model
@@ -146,26 +146,8 @@ class Model():
                 # round probabilities to class labels
                 prediction = model.predict(features_test).round()
                 # print(prediction)
-                prediction = enc.inverse_transform(prediction)
-                labels_test = enc.inverse_transform(labels_test)
-                to_drop = np.where([prediction == None])[1]
-                prediction = np.delete(prediction, to_drop, 0)
-                labels_test = np.delete(labels_test, to_drop, 0)
-                l_test = np.append(l_test, labels_test)
-                pred = np.append(pred, prediction)
-                # print(pred.shape, l_test.shape)
-                disp = ConfusionMatrixDisplay.from_predictions(
-                    l_test,
-                    pred,
-                    cmap=plt.cm.Greens,
-                    normalize='true',)
-                category = self.categories[cat]
-                disp.ax_.set_title("Normalized confusion matrix - " + str(category))
-                script_dir = os.path.dirname(__file__)
-                results_dir = os.path.join(script_dir, 'confusion_matrices/')
-                if not os.path.isdir(results_dir):
-                    os.makedirs(results_dir)
-                plt.savefig(results_dir + category)
+                self.make_confusion_matrices(
+                    enc, cat, epochs, prediction, labels_test, pred, l_test)
             else:
                 print('please select a correct task. \n Task supported are: multilabel, multiclass')
 
@@ -173,3 +155,27 @@ class Model():
             acc = accuracy_score(labels_test, prediction)
             results.append(acc)
         return results
+
+    def make_confusion_matrices(self, enc, cat, epochs, prediction, labels_test, pred, l_test):
+        prediction = enc.inverse_transform(prediction)
+        labels_test = enc.inverse_transform(labels_test)
+        to_drop = np.where([prediction == None])[1]
+        prediction = np.delete(prediction, to_drop, 0)
+        labels_test = np.delete(labels_test, to_drop, 0)
+        l_test = np.append(l_test, labels_test)
+        pred = np.append(pred, prediction)
+        # print(pred.shape, l_test.shape)
+        disp = ConfusionMatrixDisplay.from_predictions(
+            l_test,
+            pred,
+            cmap=plt.cm.Greens,
+            normalize='true',)
+        category = self.categories[cat]
+        disp.ax_.set_title(
+            "Normalized confusion matrix - " + str(category) + ' - trained for ' + str(epochs) +
+            ' epoch(s)')
+        script_dir = os.path.dirname(__file__)
+        results_dir = os.path.join(script_dir, 'confusion_matrices/')
+        if not os.path.isdir(results_dir):
+            os.makedirs(results_dir)
+        plt.savefig(results_dir + category)
