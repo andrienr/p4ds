@@ -13,6 +13,7 @@ from keras.layers import Dense
 from keras.models import Sequential
 from preprocess import Preprocess
 import numpy as np
+import pandas as pd
 import time
 import matplotlib.pyplot as plt
 
@@ -33,7 +34,7 @@ class Model():
         self.df_multiclass_labels = self.data.df_multiclass_labels
 
         if ui_model:
-            # if a compiled model does not exist create a new one and train for just few epochs
+            # if a compiled model does not exist create a new one and train for 5 epochs
             if not os.path.exists(model_path):
 
                 start = time.time()
@@ -84,14 +85,19 @@ class Model():
         multilabel_model.save(os.path.join(self.model_path, 'multilabel_model'))
 
         multiclass_model = {}
-        for i, cat in enumerate(self.categories, 1):
+        for index, cat in enumerate(self.categories, 1):
             print('training category ' + str(cat))
             encoded_multiclass_labels = OneHotEncoder().fit_transform(
-                self.df_multiclass_labels[:, i - 1].reshape(-1, 1)).toarray()
+                self.df_multiclass_labels[:, index - 1].reshape(-1, 1)).toarray()
             # get model
             model = self.get_multiclass_model(n_inputs)
+            mcl = pd.DataFrame(self.df_multiclass_labels)
+            class_weight = {
+                i: (1 / mcl.groupby(mcl[index - 1]).size().values[i]) * (len(mcl) / 3.0)
+                for i in range(0, len(mcl.groupby(mcl[index - 1]).size().values))}
             # fit the models on all data
-            model.fit(self.features, encoded_multiclass_labels, verbose=1, epochs=epochs)
+            model.fit(self.features, encoded_multiclass_labels,
+                      verbose=1, epochs=epochs, class_weight=class_weight)
             model.save(os.path.join(self.model_path, 'multiclass_model', cat))
             multiclass_model.update({cat: model})
 
@@ -100,7 +106,7 @@ class Model():
 
         # first predict the category
         multilabel_prediction = self.multilabel_model(np.asarray([self.tokenizer(text)]))
-        threshold = 0.3
+        threshold = 0.4
         relevant_categories = np.where(multilabel_prediction[0] > threshold)
 
         # predict the sentiment for the relevant categories
@@ -142,7 +148,13 @@ class Model():
                 labels_test = enc.fit_transform(
                     labels_test.reshape(-1, 1)).toarray()
                 model = self.get_multiclass_model(n_inputs)
-                model.fit(features_train, labels_train, epochs=epochs)
+                # use the class weights to force the model paying more attention to under-represented classes
+                mcl = pd.DataFrame(self.df_multiclass_labels)
+                class_weight = {
+                    i: (1 / mcl.groupby(mcl[cat]).size().values[i]) * (len(mcl) / 3.0)
+                    for i in range(0, len(mcl.groupby(mcl[cat]).size().values))}
+                model.fit(features_train, labels_train, epochs=epochs,
+                          class_weight=class_weight)
                 # round probabilities to class labels
                 prediction = model.predict(features_test).round()
                 # print(prediction)
