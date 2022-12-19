@@ -16,20 +16,15 @@ class Preprocess():
     def __init__(self):
 
         start = time.time()
-        print(
-            '////////////////////////////////////////////////' +
-            'STARTING THE PREPROCESSING, PLEASE BE PATIENT!' +
-            '////////////////////////////////////////////////'
-        )
 
         VOCAB_SIZE = 1000
-        SEQUENCE_LENGTH = 200
+        MAX_NUM_WORDS = 200
 
         # read the csv file
         csv = pd.read_csv('data/absita_2018_training.csv', sep=';')
 
         self.tokenizer = tf.keras.layers.TextVectorization(
-            max_tokens=VOCAB_SIZE, output_sequence_length=SEQUENCE_LENGTH)
+            max_tokens=VOCAB_SIZE, output_sequence_length=MAX_NUM_WORDS)
         self.tokenizer.adapt(csv.sentence.map(lambda text: text))
 
         self.features = self.tokenizer(csv.sentence).numpy()

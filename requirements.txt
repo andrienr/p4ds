@@ -1,9 +1,7 @@
-os
-time
-shutil
 pandas
 numpy
 matplotlib
-sklearn
+scikit-learn
 tensorflow
 flask
+nltk
