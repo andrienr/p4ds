@@ -7,7 +7,7 @@ The project performs two tasks:
 - multilabel classification for detecting the review topic
 - multiclass classification for detecting review polarity
 
-Both models are composed of 2 dense neural network layers
+Both models are bidirectional LSTM neural networks
 
 They are trained on a dataset, taken from http://sag.art.uniroma2.it/absita/data/, that contains annotated hotel reviews scraped from the website booking.com
 
@@ -17,7 +17,7 @@ Script used for the training process are `preprocess.py` and `model.py`
 
 Script used for the user interface is `ui.py`
 
-Folder `tf_models` contains tensorflow models for both multilabel and multiclass models, trained for 500 epochs
+Folder `tf_models` contains tensorflow models for both multilabel and multiclass models, trained for 25 epochs
 
 Folder `confusion_matrices` contains confusion matrix plots for all the 8 categories, generated during the evaluation phase
 

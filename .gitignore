@@ -2,6 +2,4 @@
 /p4ds
 #pycache
 __pycache__
-# /training_results
-/confusion_matrices copy
-/tf_models copy
+/training_results
